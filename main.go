@@ -7,10 +7,9 @@ import (
 	"github.com/ThembinkosiThemba/golang-crud/routes"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
-	// "github.com/joho/godotenv"
 )
 
-var bookCollection *mongo.Collection = database.OpenCollection(database.Client, "food")
+var bookCollection *mongo.Collection = database.OpenCollection(database.Client, "book")
 
 func main() {
 	port := os.Getenv("PORT")

@@ -11,10 +11,8 @@ import (
 )
 
 func DBinstance() *mongo.Client {
-	MongoDb := "mongodb+srv://thembinkosi:thembinkosi12321@cluster0.f9zelsb.mongodb.net/?retryWrites=true&w=majority"
-	fmt.Print(MongoDb)
 
-	client, err := mongo.NewClient(options.Client().ApplyURI(MongoDb))
+	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb+srv://thembinkosi:thembinkosi12321@cluster0.f9zelsb.mongodb.net/?retryWrites=true&w=majority"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -28,7 +26,13 @@ func DBinstance() *mongo.Client {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Connected to mongo Db")
+	err = client.Ping(context.TODO(), nil)
+	if err != nil {
+		log.Println("failed to connect to mongodb")
+		return nil
+	}
+
+	fmt.Println("Successfully connected to mongoDb")
 	return client
 }
 

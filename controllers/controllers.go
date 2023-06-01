@@ -10,11 +10,12 @@ import (
 	"github.com/ThembinkosiThemba/golang-crud/database"
 	"github.com/ThembinkosiThemba/golang-crud/models"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var bookCollection *mongo.Collection = database.OpenCollection(database.Client, "book")
@@ -63,6 +64,7 @@ func GetBook() gin.HandlerFunc {
 func CreateBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		defer cancel()
 
 		var book models.Book
 
@@ -96,22 +98,57 @@ func CreateBook() gin.HandlerFunc {
 	}
 }
 
-// func UpdateBook() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-// 		var book models.Book
+func UpdateBook() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		var book models.Book
 
-// 		bookId := c.Param("book_id")
+		bookId := c.Param("book_id")
 
-// 		if err := c.BindJSON(&book); err != nil {
-// 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 			return
-// 		}
+		if err := c.BindJSON(&book); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
 
-// 		var updateObj primitive.D
+		var updateObj primitive.D
 
-// 		if book.Title != nil {
-// 			updateObj = append(updateObj, bson.E{"title", book.Title})
-// 		}
-// 	}
-// }
+		if book.Title != "" {
+			updateObj = append(updateObj, bson.E{Key: "title", Value: book.Title})
+		}
+
+		if book.Genre != "" {
+			updateObj = append(updateObj, bson.E{Key: "genre", Value: book.Genre})
+		}
+
+		if book.Year != "" {
+			updateObj = append(updateObj, bson.E{Key: "year", Value: book.Year})
+		}
+
+		book.Updated_At, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+		updateObj = append(updateObj, bson.E{Key: "updated_at", Value: book.Updated_At})
+
+		upsert := true
+		filter := bson.M{"book_id": bookId}
+
+		opt := options.UpdateOptions{
+			Upsert: &upsert,
+		}
+
+		result, err := bookCollection.UpdateOne(
+			ctx,
+			filter,
+			bson.D{
+				{Key: "$set", Value: updateObj},
+			},
+			&opt,
+		)
+
+		if err != nil {
+			msg := "Menu uodate failed"
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+		}
+
+		defer cancel()
+		c.JSON(http.StatusOK, result)
+
+	}
+}
