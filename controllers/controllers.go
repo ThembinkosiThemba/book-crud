@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/smtp"
 	"time"
 
 	"github.com/ThembinkosiThemba/golang-crud/database"
@@ -20,6 +21,29 @@ import (
 
 var bookCollection *mongo.Collection = database.OpenCollection(database.Client, "book")
 var validate = validator.New()
+
+func sendMailSimple(subject string, body string, to []string) {
+	auth := smtp.PlainAuth(
+		"",
+		"thembinkosimkhonta01@gmail.com",
+		"qtceviyfppxdeomh",
+		"smtp.gmail.com",
+	)
+
+	msg := "Subject: " + subject + "\n" + body + "\n"
+
+	err := smtp.SendMail(
+		"smtp.gmail.com:587",
+		auth,
+		"thembinkosimkhonta01@gmail.com",
+		to,
+		[]byte(msg),
+	)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+}
 
 func GetBooks() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -38,6 +62,7 @@ func GetBooks() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, allBooks)
+		sendMailSimple("Book created successfully", "The Book was successfully created", []string{"thembinkosimkhonta01@gmail.com"})
 
 	}
 }
@@ -149,6 +174,7 @@ func UpdateBook() gin.HandlerFunc {
 
 		defer cancel()
 		c.JSON(http.StatusOK, result)
+		sendMailSimple("Update notifications", "The book was updated successfully", []string{"thembinkosimkhonta01@gmail.com"})
 
 	}
 }
